@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /admin
+            cd admin
             docker pull bryanfrd/admin:latest
             docker-compose down
             docker-compose up -d
