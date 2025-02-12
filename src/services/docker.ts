@@ -2,7 +2,10 @@ import { api } from "../axios/api";
 
 class Docker {
   static async alive() {
-    return await api.get("/docker/alive").then((res) => res.status === 200).catch(() => false);
+    return await api
+      .get("/docker/alive")
+      .then((res) => res.data.status ?? 0)
+      .catch(() => 0);
   }
 
   async getContainers() {

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 const Header = () => {
   const [aliveServices, setAliveServices] = useState({
-    docker: false,
+    docker: 0,
   });
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const Header = () => {
       .catch(() => {
         setAliveServices((prevState) => ({
           ...prevState,
-          docker: false,
+          docker: 0,
         }));
       });
   }, []);

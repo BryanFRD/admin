@@ -5,8 +5,19 @@ import { ReactNode } from "react";
 interface NavbarLinkProps {
   to: string;
   children: ReactNode;
-  isAlive?: boolean;
+  isAlive?: number;
 }
+
+const getBackgroundColor = (status: number) => {
+  switch (status) {
+    case 0:
+      return "bg-red-500";
+    case 1:
+      return "bg-green-500";
+    default:
+      return "bg-gray-500";
+  }
+};
 
 const NavbarLink = ({ to, isAlive, children }: NavbarLinkProps) => {
   return (
@@ -17,11 +28,9 @@ const NavbarLink = ({ to, isAlive, children }: NavbarLinkProps) => {
       }
     >
       <span>{children}</span>
-      {isAlive && (
+      {isAlive !== undefined && (
         <div
-          className={`absolute right-0 me-4 h-2 w-2 rounded-full ${
-            isAlive ? "bg-green-500" : "bg-red-500"
-          }`}
+          className={`absolute right-0 me-4 h-2 w-2 rounded-full ${getBackgroundColor(isAlive)}`}
         ></div>
       )}
     </NavLink>
