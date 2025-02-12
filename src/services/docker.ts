@@ -1,4 +1,5 @@
 import { api } from "../axios/api";
+import { DockerType } from "../types/docker.type";
 
 class Docker {
   static async alive() {
@@ -8,23 +9,27 @@ class Docker {
       .catch(() => 0);
   }
 
-  async getContainers() {
-    return await api.get("/docker/containers");
+  static async getContainers(): Promise<DockerType[]> {
+    return await api
+      .get("/docker/containers")
+      .then((res) => res.data.containers);
   }
 
-  async getContainerById(id: string) {
-    return await api.get(`/docker/containers/${id}`);
+  static async getContainerById(id: string): Promise<DockerType> {
+    return await api
+      .get(`/docker/containers/${id}`)
+      .then((res) => res.data.container);
   }
 
-  async startContainer(id: string) {
+  static async startContainer(id: string) {
     return await api.post(`/docker/containers/${id}/start`);
   }
 
-  async stopContainer(id: string) {
+  static async stopContainer(id: string) {
     return await api.post(`/docker/containers/${id}/stop`);
   }
 
-  async restartContainer(id: string) {
+  static async restartContainer(id: string) {
     return await api.post(`/docker/containers/${id}/restart`);
   }
 }
