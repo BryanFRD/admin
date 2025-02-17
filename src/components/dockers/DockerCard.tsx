@@ -7,7 +7,6 @@ import {
 import { DockerType } from "../../types/docker.type";
 import ActionButton from "../buttons/ActionButton";
 import { useNavigate } from "react-router-dom";
-import Docker from "../../services/docker";
 
 interface DockerCardProps {
   docker: DockerType;
@@ -52,15 +51,15 @@ const DockerCard = ({ docker }: DockerCardProps) => {
           <EyeIcon className="h-5 w-5 transition-all group-hover:scale-125" />
         </ActionButton>
         <div className="flex gap-3">
-          <ActionButton onClick={() => Docker.restartContainer(docker.Id)}>
+          <ActionButton onClick={() => {}}>
             <ArrowPathIcon className="h-5 w-5 transition-all group-hover:scale-125" />
           </ActionButton>
           {docker.Status.includes("Up") ? (
-            <ActionButton onClick={() => Docker.stopContainer(docker.Id)}>
+            <ActionButton onClick={() => {}}>
               <StopIcon className="h-5 w-5 transition-all group-hover:scale-125" />
             </ActionButton>
           ) : (
-            <ActionButton onClick={() => Docker.startContainer(docker.Id)}>
+            <ActionButton onClick={() => {}}>
               <PlayIcon className="h-5 w-5 transition-all group-hover:scale-125" />
             </ActionButton>
           )}

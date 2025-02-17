@@ -1,28 +1,30 @@
 import { Link } from "react-router-dom";
 import NavbarLink from "./navbar/NavbarLink";
-import Docker from "../services/docker";
 import { useEffect, useState } from "react";
+import { useWebTransport } from "../hooks/webtransport";
 
 const Header = () => {
   const [aliveServices, setAliveServices] = useState({
     docker: 0,
   });
+  const { messages, sendMessage } = useWebTransport();
 
   useEffect(() => {
-    Docker.alive()
-      .then((res) => {
-        setAliveServices((prevState) => ({
-          ...prevState,
-          docker: res,
+    sendMessage("docker:status");
+  }, [sendMessage]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      const message = messages[messages.length - 1];
+      if (message.startsWith("docker:status")) {
+        const [, status] = message.split(":");
+        setAliveServices((prevValue) => ({
+          ...prevValue,
+          docker: parseInt(status),
         }));
-      })
-      .catch(() => {
-        setAliveServices((prevState) => ({
-          ...prevState,
-          docker: 0,
-        }));
-      });
-  }, []);
+      }
+    }
+  }, [messages]);
 
   return (
     <header className="flex min-h-screen flex-col items-center gap-4 text-white shadow-2xl">
