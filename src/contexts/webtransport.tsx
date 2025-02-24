@@ -13,6 +13,9 @@ const WebTransportContext = createContext<WebTransportContextProps | undefined>(
 const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [status, setStatus] = useState<
+    "connected" | "disconnected" | "connecting" | "disconnecting"
+  >("disconnected");
   const [transport, setTransport] = useState<WebTransport | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
 
@@ -21,6 +24,7 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
 
     const connect = async () => {
       try {
+        setStatus("connecting");
         webtransport = new WebTransport(config.WEBTRANSPORT_URL);
         await webtransport.ready;
 
@@ -32,6 +36,8 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
           if (done) {
             break;
           }
+
+          console.log("value:", new TextDecoder().decode(value));
 
           setMessages((prevValue) => [
             ...prevValue,
@@ -46,13 +52,13 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
     connect();
 
     return () => {
-      webtransport?.close();
+      webtransport?.closed.then(() => {
+        webtransport?.close();
+      });
     };
   }, []);
 
   const sendMessage = async (message: string) => {
-    console.log("message:", message);
-    console.log("transport:", transport);
     if (transport) {
       const writer = transport.datagrams.writable.getWriter();
       await writer.write(new TextEncoder().encode(message));

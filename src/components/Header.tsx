@@ -49,6 +49,9 @@ const Header = () => {
               Docker
             </NavbarLink>
           </li>
+          <li>
+            <NavbarLink to={"/shell"}>Terminal</NavbarLink>
+          </li>
         </ul>
       </nav>
     </header>
