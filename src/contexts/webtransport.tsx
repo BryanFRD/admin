@@ -1,4 +1,10 @@
-import React, { createContext, useState, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  useEffect,
+  useMemo,
+} from "react";
 import { config } from "../configs/config";
 
 interface WebTransportContextProps {
@@ -13,37 +19,57 @@ const WebTransportContext = createContext<WebTransportContextProps | undefined>(
 const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [status, setStatus] = useState<
-    "connected" | "disconnected" | "connecting" | "disconnecting"
-  >("disconnected");
-  const [transport, setTransport] = useState<WebTransport | null>(null);
+  const [reader, setReader] = useState<
+    ReadableStreamDefaultReader | undefined
+  >();
+  const [writer, setWriter] = useState<
+    WritableStreamDefaultWriter | undefined
+  >();
   const [messages, setMessages] = useState<string[]>([]);
+  const [sendMessage, setSendMessage] = useState< 
+    (message: string) => Promise<void>
+  >(async () => {});
 
   useEffect(() => {
     let webtransport: WebTransport | null = null;
 
     const connect = async () => {
       try {
-        setStatus("connecting");
         webtransport = new WebTransport(config.WEBTRANSPORT_URL);
         await webtransport.ready;
 
-        setTransport(webtransport);
+        const bidirectionalStream =
+          await webtransport.createBidirectionalStream();
+        setReader(bidirectionalStream.readable.getReader());
+        setWriter(bidirectionalStream.writable.getWriter());
 
-        const reader = webtransport.datagrams.readable.getReader();
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            break;
+        const readStream = async () => {
+          while (true) {
+            if (reader === undefined) {
+              break;
+            }
+
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
+            }
+            setMessages((prevValue) => [
+              ...prevValue,
+              new TextDecoder().decode(value),
+            ]);
           }
+        };
 
-          console.log("value:", new TextDecoder().decode(value));
+        readStream();
 
-          setMessages((prevValue) => [
-            ...prevValue,
-            new TextDecoder().decode(value),
-          ]);
-        }
+        const sendMessage = async (message: string) => {
+          if (writer === undefined) {
+            return;
+          }
+          await writer.write(new TextEncoder().encode(message));
+        };
+
+        setSendMessage(sendMessage);
       } catch (error) {
         console.error(error);
       }
@@ -56,18 +82,15 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
         webtransport?.close();
       });
     };
-  }, []);
+  }, [reader, writer]);
 
-  const sendMessage = async (message: string) => {
-    if (transport) {
-      const writer = transport.datagrams.writable.getWriter();
-      await writer.write(new TextEncoder().encode(message));
-      writer.releaseLock();
-    }
-  };
+  const contextValue = useMemo(
+    () => ({ messages, sendMessage }),
+    [messages, sendMessage],
+  );
 
   return (
-    <WebTransportContext.Provider value={{ messages, sendMessage }}>
+    <WebTransportContext.Provider value={contextValue}>
       {children}
     </WebTransportContext.Provider>
   );

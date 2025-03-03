@@ -24,7 +24,7 @@ const NavbarLink = ({ to, isAlive, children }: NavbarLinkProps) => {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `relative flex items-center justify-between px-10 py-4 font-semibold ${isActive ? "bg-gray-700" : ""}`
+        `relative flex items-center justify-between px-10 py-4 font-semibold hover:bg-gray-700 ${isActive ? "bg-gray-700" : ""}`
       }
     >
       <span>{children}</span>

@@ -25,7 +25,7 @@ class TerminalStyle {
     terminalHistoryContainer:
       "flex flex-col pointer-events-none px-4 cursor-text",
     terminalSelectorContainer:
-      "absolute top-2 right-4 opacity-50 hover:opacity-100 selected:opacity-100",
+      "absolute top-4 right-4 opacity-50 hover:opacity-100 selected:opacity-100",
     terminalSelectorSelect:
       "rounded-md bg-gray-800 px-2 py-1 text-gray-200 outline-0",
   };

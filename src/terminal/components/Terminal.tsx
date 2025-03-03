@@ -2,11 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import TerminalSelector from "./TerminalSelector";
 import TerminalType from "../enum/TerminalType";
 import TerminalStyle, { TerminalStyleObject } from "../styles/TerminalStyle";
+import { useCaretPosition } from "react-use-caret-position";
 
 const Terminal = () => {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const { ref, updateCaret, start, end } = useCaretPosition();
   const [input, setInput] = useState<string>("");
+  const [isAutoComplete, setIsAutoComplete] = useState<boolean>(false);
+  const [autoCompleteBuffer, setAutoCompleteBuffer] = useState<string | null>(
+    null,
+  );
   const [type, setType] = useState<TerminalType>(TerminalType.CMD);
   const [style, setStyle] = useState<TerminalStyleObject>(
     TerminalStyle.getTerminalStyle(type),
@@ -18,8 +23,15 @@ const Terminal = () => {
 
   const handleKeyDownCapture = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
+      setIsAutoComplete(false);
       setOutput((prevValue) => [...prevValue, input]);
       setInput("");
+    } else if (e.key === "Tab") {
+      console.log(start, end);
+      setIsAutoComplete(true);
+      e.preventDefault();
+    } else {
+      setIsAutoComplete(false);
     }
   };
 
@@ -27,7 +39,7 @@ const Terminal = () => {
     element: React.MouseEvent<HTMLDivElement, MouseEvent> | null = null,
   ) => {
     if (element == null || element.target === terminalRef.current) {
-      inputRef.current?.focus({
+      ref.current?.focus({
         preventScroll: true,
       });
     }
@@ -63,10 +75,13 @@ const Terminal = () => {
         <div className="bottom-0 mt-2 flex w-full items-center gap-2">
           <span className="whitespace-nowrap">$&nbsp;{currentDir}&gt;</span>
           <input
-            ref={inputRef}
+            ref={ref}
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              updateCaret();
+            }}
             onKeyDownCapture={handleKeyDownCapture}
             className="w-full outline-0"
           />

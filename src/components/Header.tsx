@@ -16,6 +16,7 @@ const Header = () => {
   useEffect(() => {
     if (messages.length > 0) {
       const message = messages[messages.length - 1];
+      console.log("message:", message);
       if (message.startsWith("docker:status")) {
         const [, status] = message.split(":");
         setAliveServices((prevValue) => ({
