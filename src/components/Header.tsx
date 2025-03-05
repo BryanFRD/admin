@@ -10,7 +10,9 @@ const Header = () => {
   const { messages, sendMessage } = useWebTransport();
 
   useEffect(() => {
-    sendMessage("docker:status");
+    sendMessage("DockerStatus");
+    sendMessage("SystemStatus");
+    sendMessage("DockerContainersRestart", { containerId: "xxx" });
   }, [sendMessage]);
 
   useEffect(() => {

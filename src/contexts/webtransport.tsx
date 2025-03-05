@@ -7,10 +7,14 @@ import React, {
   useCallback,
 } from "react";
 import { config } from "../configs/config";
+import { Event, EventPayload } from "../events/event";
 
 interface WebTransportContextProps {
   messages: string[];
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: <T extends Event>(
+    type: T,
+    data?: EventPayload<T>,
+  ) => Promise<void>;
 }
 
 const WebTransportContext = createContext<WebTransportContextProps | undefined>(
@@ -21,6 +25,9 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [webtransport, setWebtransport] = useState<WebTransport | null>(null);
+  const [webtransportMethod] = useState<"datagrams" | "bidirectional">(
+    "datagrams",
+  );
   const [reader, setReader] = useState<
     ReadableStreamDefaultReader | undefined
   >();
@@ -38,11 +45,6 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
         await webtransport.ready;
 
         setWebtransport(webtransport);
-
-        const bidirectionalStream =
-          await webtransport.createBidirectionalStream();
-        setReader(bidirectionalStream.readable.getReader());
-        setWriter(bidirectionalStream.writable.getWriter());
       } catch (error) {
         console.error(error);
       }
@@ -56,6 +58,27 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
       });
     };
   }, []);
+
+  useEffect(() => {
+    if (webtransport === null) {
+      return;
+    }
+
+    const init = async () => {
+      const stream =
+        webtransportMethod === "datagrams"
+          ? webtransport.datagrams
+          : await webtransport.createBidirectionalStream();
+
+      const readableStream = stream.readable;
+      const writableStream = stream.writable;
+
+      setReader(readableStream.getReader());
+      setWriter(writableStream.getWriter());
+    };
+
+    init();
+  }, [webtransport, webtransportMethod]);
 
   const readMessages = useCallback(async () => {
     while (true) {
@@ -75,11 +98,13 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   }, [reader]);
 
   const sendMessage = useCallback(
-    async (message: string) => {
+    async <T extends Event>(type: T, data?: EventPayload<T>) => {
       if (writer === undefined) {
         return;
       }
-      await writer.write(new TextEncoder().encode(message));
+      await writer.write(
+        new TextEncoder().encode(JSON.stringify({ type, data })),
+      );
     },
     [writer],
   );
