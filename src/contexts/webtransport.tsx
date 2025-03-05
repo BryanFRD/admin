@@ -4,6 +4,7 @@ import React, {
   ReactNode,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 import { config } from "../configs/config";
 
@@ -19,6 +20,7 @@ const WebTransportContext = createContext<WebTransportContextProps | undefined>(
 const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [webtransport, setWebtransport] = useState<WebTransport | null>(null);
   const [reader, setReader] = useState<
     ReadableStreamDefaultReader | undefined
   >();
@@ -26,9 +28,6 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
     WritableStreamDefaultWriter | undefined
   >();
   const [messages, setMessages] = useState<string[]>([]);
-  const [sendMessage, setSendMessage] = useState< 
-    (message: string) => Promise<void>
-  >(async () => {});
 
   useEffect(() => {
     let webtransport: WebTransport | null = null;
@@ -38,38 +37,12 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
         webtransport = new WebTransport(config.WEBTRANSPORT_URL);
         await webtransport.ready;
 
+        setWebtransport(webtransport);
+
         const bidirectionalStream =
           await webtransport.createBidirectionalStream();
         setReader(bidirectionalStream.readable.getReader());
         setWriter(bidirectionalStream.writable.getWriter());
-
-        const readStream = async () => {
-          while (true) {
-            if (reader === undefined) {
-              break;
-            }
-
-            const { value, done } = await reader.read();
-            if (done) {
-              break;
-            }
-            setMessages((prevValue) => [
-              ...prevValue,
-              new TextDecoder().decode(value),
-            ]);
-          }
-        };
-
-        readStream();
-
-        const sendMessage = async (message: string) => {
-          if (writer === undefined) {
-            return;
-          }
-          await writer.write(new TextEncoder().encode(message));
-        };
-
-        setSendMessage(sendMessage);
       } catch (error) {
         console.error(error);
       }
@@ -82,7 +55,38 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
         webtransport?.close();
       });
     };
-  }, [reader, writer]);
+  }, []);
+
+  const readMessages = useCallback(async () => {
+    while (true) {
+      if (reader === undefined) {
+        break;
+      }
+
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      setMessages((prevValue) => [
+        ...prevValue,
+        new TextDecoder().decode(value),
+      ]);
+    }
+  }, [reader]);
+
+  const sendMessage = useCallback(
+    async (message: string) => {
+      if (writer === undefined) {
+        return;
+      }
+      await writer.write(new TextEncoder().encode(message));
+    },
+    [writer],
+  );
+
+  useEffect(() => {
+    readMessages();
+  }, [reader, readMessages]);
 
   const contextValue = useMemo(
     () => ({ messages, sendMessage }),
