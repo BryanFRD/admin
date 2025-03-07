@@ -92,6 +92,26 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
     init();
   }, [webtransport, webtransportMethod]);
 
+  const addListener = <T extends Event>(
+    type: T,
+    listener: (data: EventData<T>) => void,
+  ) => {
+    setEventListeners((prevValue) => ({
+      ...prevValue,
+      [type]: [...(prevValue[type] ?? []), listener],
+    }));
+  };
+
+  const removeListener = <T extends Event>(
+    type: T,
+    listener: (data: EventData<T>) => void,
+  ) => {
+    setEventListeners((prevValue) => ({
+      ...prevValue,
+      [type]: (prevValue[type] ?? []).filter((l) => l !== listener),
+    }));
+  };
+
   const readMessages = useCallback(async () => {
     while (true) {
       if (reader === undefined) {
@@ -116,31 +136,11 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
       }
       console.log("sendMessage:", { type, data });
       await writer.write(
-        new TextEncoder().encode(JSON.stringify({ type, data })),
+        new TextEncoder().encode(JSON.stringify({ type, data: data ?? {} })),
       );
     },
     [writer],
   );
-
-  const addListener = <T extends Event>(
-    type: T,
-    listener: (data: EventData<T>) => void,
-  ) => {
-    setEventListeners((prevValue) => ({
-      ...prevValue,
-      [type]: [...(prevValue[type] ?? []), listener],
-    }));
-  };
-
-  const removeListener = <T extends Event>(
-    type: T,
-    listener: (data: EventData<T>) => void,
-  ) => {
-    setEventListeners((prevValue) => ({
-      ...prevValue,
-      [type]: (prevValue[type] ?? []).filter((l) => l !== listener),
-    }));
-  };
 
   const addEventListener = useCallback(
     <T extends Event>(type: T, listener: (data: EventData<T>) => void) => {

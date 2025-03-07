@@ -12,10 +12,10 @@ const Header = () => {
   useEffect(() => {
     const removeDockerStatusListener = addEventListener(
       "DockerStatus",
-      (status) => {
+      (data) => {
         setAliveServices((prevValue) => ({
           ...prevValue,
-          docker: status,
+          docker: data.status,
         }));
       },
     );
