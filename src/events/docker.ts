@@ -6,7 +6,7 @@ type DockerEventPayload = {
 };
 
 type DockerEventData = {
-  DockerStatus: { uptime: number };
+  DockerStatus: number;
   DockerContainersRestart: { containerId: string };
 };
 

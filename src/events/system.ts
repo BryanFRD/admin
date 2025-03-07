@@ -5,7 +5,7 @@ type SystemEventPayload = {
 };
 
 type SystemEventData = {
-  SystemStatus: { uptime: number };
+  SystemStatus: number;
 };
 
 export type { SystemEvent, SystemEventPayload, SystemEventData };

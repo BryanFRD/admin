@@ -7,27 +7,27 @@ const Header = () => {
   const [aliveServices, setAliveServices] = useState({
     docker: 0,
   });
-  const { messages, sendMessage } = useWebTransport();
+  const { sendMessage, addEventListener } = useWebTransport();
+
+  useEffect(() => {
+    const removeDockerStatusListener = addEventListener(
+      "DockerStatus",
+      (status) => {
+        setAliveServices((prevValue) => ({
+          ...prevValue,
+          docker: status,
+        }));
+      },
+    );
+
+    return () => {
+      removeDockerStatusListener();
+    };
+  }, [addEventListener]);
 
   useEffect(() => {
     sendMessage("DockerStatus");
-    sendMessage("SystemStatus");
-    sendMessage("DockerContainersRestart", { containerId: "xxx" });
   }, [sendMessage]);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      const message = messages[messages.length - 1];
-      console.log("message:", message);
-      if (message.startsWith("docker:status")) {
-        const [, status] = message.split(":");
-        setAliveServices((prevValue) => ({
-          ...prevValue,
-          docker: parseInt(status),
-        }));
-      }
-    }
-  }, [messages]);
 
   return (
     <header className="flex min-h-screen flex-col items-center gap-4 text-white shadow-2xl">

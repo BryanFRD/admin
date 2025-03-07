@@ -7,15 +7,22 @@ import React, {
   useCallback,
 } from "react";
 import { config } from "../configs/config";
-import { Event, EventPayload } from "../events/event";
+import { Event, EventData, EventPayload } from "../events/event";
 
 interface WebTransportContextProps {
-  messages: string[];
   sendMessage: <T extends Event>(
     type: T,
     data?: EventPayload<T>,
   ) => Promise<void>;
+  addEventListener: <T extends Event>(
+    type: T,
+    listener: (data: EventData<T>) => void,
+  ) => () => void;
 }
+
+type EventListeners = {
+  [T in Event]?: Array<(data: EventData<T>) => void>;
+};
 
 const WebTransportContext = createContext<WebTransportContextProps | undefined>(
   undefined,
@@ -26,7 +33,7 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [webtransport, setWebtransport] = useState<WebTransport | null>(null);
   const [webtransportMethod] = useState<"datagrams" | "bidirectional">(
-    "datagrams",
+    "bidirectional",
   );
   const [reader, setReader] = useState<
     ReadableStreamDefaultReader | undefined
@@ -35,6 +42,7 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
     WritableStreamDefaultWriter | undefined
   >();
   const [messages, setMessages] = useState<string[]>([]);
+  const [eventListeners, setEventListeners] = useState<EventListeners>({});
 
   useEffect(() => {
     let webtransport: WebTransport | null = null;
@@ -58,6 +66,10 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
       });
     };
   }, []);
+
+  useEffect(() => {
+    console.log("eventListeners:", eventListeners);
+  }, [eventListeners]);
 
   useEffect(() => {
     if (webtransport === null) {
@@ -102,6 +114,7 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
       if (writer === undefined) {
         return;
       }
+      console.log("sendMessage:", { type, data });
       await writer.write(
         new TextEncoder().encode(JSON.stringify({ type, data })),
       );
@@ -109,13 +122,54 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
     [writer],
   );
 
+  const addListener = <T extends Event>(
+    type: T,
+    listener: (data: EventData<T>) => void,
+  ) => {
+    setEventListeners((prevValue) => ({
+      ...prevValue,
+      [type]: [...(prevValue[type] ?? []), listener],
+    }));
+  };
+
+  const removeListener = <T extends Event>(
+    type: T,
+    listener: (data: EventData<T>) => void,
+  ) => {
+    setEventListeners((prevValue) => ({
+      ...prevValue,
+      [type]: (prevValue[type] ?? []).filter((l) => l !== listener),
+    }));
+  };
+
+  const addEventListener = useCallback(
+    <T extends Event>(type: T, listener: (data: EventData<T>) => void) => {
+      addListener(type, listener);
+
+      return () => removeListener(type, listener);
+    },
+    [],
+  );
+
   useEffect(() => {
     readMessages();
   }, [reader, readMessages]);
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const message = messages[messages.length - 1];
+      console.log("message:", message);
+      const { type, data } = JSON.parse(message);
+      const listeners = eventListeners[type as Event];
+      if (listeners) {
+        listeners.forEach((listener) => listener(data));
+      }
+    }
+  }, [messages, eventListeners]);
+
   const contextValue = useMemo(
-    () => ({ messages, sendMessage }),
-    [messages, sendMessage],
+    () => ({ sendMessage, addEventListener }),
+    [sendMessage, addEventListener],
   );
 
   return (
