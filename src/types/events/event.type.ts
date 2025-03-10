@@ -1,5 +1,5 @@
-import { DockerEvent, DockerEventData, DockerEventPayload } from "./docker";
-import { SystemEvent, SystemEventData, SystemEventPayload } from "./system";
+import { DockerEvent, DockerEventData, DockerEventPayload } from "./docker.type";
+import { SystemEvent, SystemEventData, SystemEventPayload } from "./system.type";
 
 type Event = DockerEvent | SystemEvent;
 

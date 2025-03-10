@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { config } from "../configs/config";
-import { Event, EventData, EventPayload } from "../events/event";
+import { Event, EventData, EventPayload } from "../types/events/event.type";
 
 interface WebTransportContextProps {
   sendMessage: <T extends Event>(
@@ -68,10 +68,6 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    console.log("eventListeners:", eventListeners);
-  }, [eventListeners]);
-
-  useEffect(() => {
     if (webtransport === null) {
       return;
     }
@@ -119,9 +115,11 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       const { value, done } = await reader.read();
+
       if (done) {
         break;
       }
+
       setMessages((prevValue) => [
         ...prevValue,
         new TextDecoder().decode(value),
@@ -158,7 +156,6 @@ const WebTransportProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (messages.length > 0) {
       const message = messages[messages.length - 1];
-      console.log("message:", message);
       const { type, data } = JSON.parse(message);
       const listeners = eventListeners[type as Event];
       if (listeners) {
